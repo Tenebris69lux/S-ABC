@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Площадь треугольника — интерактивная модель</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<style>
+  :root{
+    --paper:#F1EAD9; --sheet:#FAF6EC; --ink:#282218; --ink2:#6E6350; --faint:#9A8F77;
+    --frame:#C4B794; --accent:#BC4318; --accent-ink:#8F320F; --ok:#3D6B4F;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--paper)}
+  body{font-family:'STIX Two Text',Georgia,'Times New Roman',serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:clamp(22px,4vw,52px) clamp(18px,3.5vw,44px) 44px}
+
+  .overline{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink2);display:flex;align-items:center;gap:12px}
+  .overline::before{content:'';width:34px;height:2px;background:var(--accent);flex:0 0 auto}
+  h1{font-size:clamp(38px,5.4vw,64px);line-height:1.04;font-weight:600;letter-spacing:-.015em;margin:16px 0 0;display:flex;align-items:baseline;gap:.16em;flex-wrap:wrap}
+  h1 em{font-style:italic;font-weight:500}
+  .hmark{width:.78em;height:.62em;flex:0 0 auto;transform:translateY(.03em)}
+  .lead{max-width:68ch;font-size:clamp(15.5px,1.6vw,18px);line-height:1.62;color:#4A4234;margin-top:16px}
+  .lead .acc{color:var(--accent);font-style:italic}
+  .rule{border:0;border-top:2.5px solid var(--ink);margin:28px 0 0}
+  .rule::after{content:'';display:block;border-top:1px solid var(--ink);margin-top:3px}
+
+  .methods{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--frame)}
+  .method-btn{flex:1 1 240px;display:flex;align-items:center;gap:14px;padding:15px 18px 14px;background:none;border:0;border-left:1px solid var(--frame);cursor:pointer;text-align:left;font-family:inherit;color:var(--ink);position:relative;transition:background .2s}
+  .method-btn:first-child{border-left:0}
+  .method-btn:hover{background:rgba(40,34,24,.045)}
+  .method-btn.active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--accent)}
+  .method-btn .pic{flex:0 0 auto;opacity:.92}
+  .method-btn .name{display:block;font-weight:600;font-size:16.5px;line-height:1.15}
+  .method-btn .sub{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);margin-top:4px}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:clamp(20px,3vw,36px);margin-top:26px;align-items:start}
+  @media(max-width:1000px){.layout{grid-template-columns:1fr}}
+
+  .stage{background:var(--sheet);height:clamp(430px,56vh,610px);position:relative}
+  .stage svg{display:block;width:100%;height:100%;overflow:visible;touch-action:none}
+  #scene text{user-select:none}
+  #scene text.halo{paint-order:stroke;stroke:var(--sheet);stroke-width:5px;stroke-linejoin:round}
+  .handle{cursor:grab}
+  .handle .dot{fill:#FFFDF4;stroke:var(--ink);stroke-width:2;transition:transform .15s;transform-box:fill-box;transform-origin:center}
+  .handle:hover .dot{transform:scale(1.28);stroke:var(--accent)}
+  .handle.drag .dot{stroke:var(--accent);fill:#fff}
+  .handle .hit{fill:none;pointer-events:all}
+  body.grabbing, body.grabbing *{cursor:grabbing!important}
+
+  .stagebar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;flex-wrap:wrap}
+  .sb-left{display:flex;align-items:center;gap:10px}
+  .nb{width:38px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--sheet);border:1px solid var(--ink);color:var(--ink);cursor:pointer;transition:.15s}
+  .nb:hover:not(:disabled){background:var(--ink);color:var(--sheet)}
+  .nb:disabled{opacity:.28;cursor:default}
+  #stepNum{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);min-width:88px;text-align:center;letter-spacing:.06em}
+  .hint{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.04em}
+  @media(max-width:640px){.hint{display:none}}
+
+  .panel{border-top:2px solid var(--ink);padding-top:9px;margin-bottom:24px}
+  .panel h3{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ink2);margin-bottom:6px}
+  .meas{display:flex;align-items:baseline;gap:10px;padding:8px 2px;border-bottom:1px dashed #D5C9AC}
+  .meas .sym{font-style:italic;font-size:19px;width:20px}
+  .meas .lbl{font-size:13px;color:var(--ink2)}
+  .meas .val{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:14px}
+  .meas.total{border-bottom:0;padding-top:10px}
+  .meas.total .sym{color:var(--accent)}
+  .meas.total .val{font-size:17px;font-weight:600;color:var(--accent)}
+  .calc{margin:12px 2px 4px;padding:10px 12px;background:rgba(40,34,24,.045);border-left:3px solid transparent;font-size:15.5px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;transition:border-color .35s}
+  .calc.final{border-left-color:var(--accent)}
+  .calc .unit{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2)}
+  #cellLine{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);padding:7px 2px 0;line-height:1.65}
+  #cellLine b{color:var(--ink)}
+
+  .steps{list-style:none}
+  .step{display:flex;gap:11px;padding:9px 8px 9px 10px;border-left:2px solid transparent;cursor:pointer;transition:background .2s,border-color .2s;user-select:none}
+  .step:hover{background:rgba(40,34,24,.04)}
+  .step .idx{flex:0 0 21px;height:21px;border:1px solid #C9BB99;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;margin-top:1px;color:var(--ink2);transition:.2s}
+  .step .t{display:block;font-weight:600;font-size:14.5px;line-height:1.3}
+  .step .d{display:block;font-size:13px;line-height:1.5;color:#57503F;margin-top:3px}
+  .step.future .t{color:#A79B82}
+  .step.future .d{color:#B3A88F}
+  .step.passed .idx{background:var(--ink);border-color:var(--ink);color:var(--sheet)}
+  .step.current{border-left-color:var(--accent);background:rgba(188,67,24,.06)}
+  .step.current .idx{border-color:var(--accent);color:var(--accent);font-weight:600}
+
+  .ghost{display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:10px 16px;border:1px solid var(--ink);background:none;color:var(--ink);cursor:pointer;transition:.15s}
+  .ghost:hover{background:var(--ink);color:var(--sheet)}
+
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--frame);font-size:13.5px;color:var(--ink2);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="overline">Интерактивная модель · Планиметрия · 8 класс</div>
+    <h1>Площадь <em>треугольника</em><svg class="hmark" viewBox="0 0 64 52" aria-hidden="true"><path d="M6 46 L58 46 L34 6 Z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><line x1="34" y1="6" x2="34" y2="46" stroke="#BC4318" stroke-width="2" stroke-dasharray="4 3"/><rect x="31.2" y="43.2" width="5.6" height="5.6" fill="none" stroke="#BC4318" stroke-width="1.2"/></svg></h1>
+    <p class="lead">Формула <span class="acc">S&nbsp;=&nbsp;½·b·h</span> не берётся из воздуха. Выберите способ объяснения — модель перевернёт, разрежет или пересчитает треугольник по клеткам. Вершины можно перетаскивать в любой момент: чертёж и вычисления живут в ответ.</p>
+    <hr class="rule">
+
+    <nav class="methods">
+      <button class="method-btn active" data-m="1" id="mb1">
+        <svg class="pic" width="36" height="30" viewBox="0 0 36 30"><path d="M4 15 L18 3 L32 15" fill="none" stroke="#282218" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 15 L18 27 L32 15" fill="none" stroke="#BC4318" stroke-width="1.8" stroke-dasharray="3 2.5" stroke-linejoin="round"/></svg>
+        <span><span class="name">Достраивание</span><span class="sub">копия на 180° → параллелограмм</span></span>
+      </button>
+      <button class="method-btn" data-m="2" id="mb2">
+        <svg class="pic" width="36" height="30" viewBox="0 0 36 30"><path d="M6 27 L15 4 L30 27 Z" fill="none" stroke="#282218" stroke-width="1.8" stroke-linejoin="round"/><line x1="10.5" y1="15.5" x2="22.5" y2="15.5" stroke="#BC4318" stroke-width="1.8" stroke-dasharray="3 2.5"/></svg>
+        <span><span class="name">Разрез</span><span class="sub">средняя линия и разворот верхушки</span></span>
+      </button>
+      <button class="method-btn" data-m="3" id="mb3">
+        <svg class="pic" width="36" height="30" viewBox="0 0 36 30"><path d="M4 26 H32 M4 18 H32 M4 10 H32 M12 26 V2? M12 26 V10 M20 26 V10 M28 26 V10" fill="none" stroke="#B9AC8B" stroke-width="1"/><path d="M4 26 L24 6 L32 26 Z" fill="rgba(188,67,24,.14)" stroke="#BC4318" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span><span class="name">По клеткам</span><span class="sub">честный подсчёт квадратиков</span></span>
+      </button>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <section>
+      <div class="stage" id="stage">
+        <svg id="scene" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#282218" stroke-width="1" opacity=".2"/>
+            </pattern>
+            <filter id="ds" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="1.5" dy="2.5" stdDeviation="2.5" flood-color="#282218" flood-opacity=".2"/>
+            </filter>
+            <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 Z" fill="#6E6350"/>
+            </marker>
+          </defs>
+          <g id="gGrid"></g>
+          <g id="gCells"></g>
+          <g id="gMain"></g>
+          <g id="gHandles">
+            <g class="handle" id="hA"><circle class="hit" r="15"/><circle class="dot" r="6.5"/></g>
+            <g class="handle" id="hB"><circle class="hit" r="15"/><circle class="dot" r="6.5"/></g>
+            <g class="handle" id="hC"><circle class="hit" r="15"/><circle class="dot" r="6.5"/></g>
+          </g>
+        </svg>
+      </div>
+      <div class="stagebar">
+        <div class="sb-left">
+          <button class="nb" id="prevB" aria-label="Предыдущий шаг"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <span id="stepNum">шаг 1 / 5</span>
+          <button class="nb" id="nextB" aria-label="Следующий шаг"><svg width="13" height="13" viewBox="0 0 24 24"><path d="M9 4l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <div class="hint">перетаскивайте вершины A, B и C · стрелки ← → листают шаги</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h3>Данные модели</h3>
+        <div class="meas"><span class="sym">b</span><span class="lbl">основание</span><span class="val" id="vB">—</span></div>
+        <div class="meas"><span class="sym">h</span><span class="lbl">высота</span><span class="val" id="vH">—</span></div>
+        <div class="meas total"><span class="sym">S</span><span class="lbl">площадь</span><span class="val" id="vS">—</span></div>
+        <div class="calc" id="calcBox"><span id="calc"></span><span class="unit">см²</span></div>
+        <div id="cellLine" style="display:none"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Ход доказательства</h3>
+        <ol class="steps" id="steps"></ol>
+      </div>
+
+      <button class="ghost" id="resetB">
+        <svg width="13" height="13" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.6 9.6 0 0 0-6.74 2.74L3 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Сбросить модель
+      </button>
+    </aside>
+  </div>
+
+  <footer>
+    <span>Попробуйте тупоугольный треугольник — высота аккуратно опустится на продолжение основания.</span>
+    <span>вся геометрия пересчитывается на лету</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const svg = $('scene'), gGrid = $('gGrid'), gCells = $('gCells'), gMain = $('gMain');
+  const hA = $('hA'), hB = $('hB'), hC = $('hC');
+
+  const INK='#282218', INK2='#6E6350', ACC='#BC4318', SHEET='#FAF6EC', OK='#3D6B4F';
+  const MONO = "'JetBrains Mono',monospace";
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ------- мир: сантиметры. пол y=0, чертёж от -13.5 до 15 по высоте -------
+  const W = 34, YMIN = -13.5, YMAX = 15;
+  const DEF = { ax: 6, cx: 25, bx: 14, by: 9 };
+  let A = { x: DEF.ax, y: 0 }, C = { x: DEF.cx, y: 0 }, B = { x: DEF.bx, y: DEF.by };
+
+  let method = 1, step = 1;
+  const anim = {}; // анимационные параметры (0..1)
+  const ALL_FIELDS = ['hlT','cloneT','contourT','ghostT','goneT','locusT','lineT','liftT','rotT','hdT','fillT','revealT','eqT'];
+  ALL_FIELDS.forEach(k => anim[k] = 0);
+
+  let dirty = true, cellsDirty = false;
+  let scale = 20, ox = 0, oy = 0, vw = 0, vh = 0;
+  let introT = 0;
+
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const fmt = v => (Math.round(v*10)/10).toFixed(1).replace('.', ',');
+  const kx  = v => (Math.round(v*10)/10).toFixed(1).replace('.', '{,}');
+  const easeInOutCubic = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k+2, 3)/2;
+  const easeOutCubic = k => 1 - Math.pow(1-k, 3);
+  const X = x => ox + x*scale, Y = y => oy - y*scale;
+
+  function animate(dur, frame, done){
+    if (RM || dur <= 0){ frame(1); if (done) done(); return () => {}; }
+    let cancelled = false; const t0 = performance.now();
+    (function loop(now){
+      if (cancelled) return;
+      const k = Math.min(1, (now - t0)/dur);
+      frame(k);
+      if (k < 1) requestAnimationFrame(loop); else if (done) done();
+    })(t0);
+    return () => { cancelled = true; };
+  }
+
+  // ------------------------------ подгонка сцены ------------------------------
+  function fit(){
+    const r = $('stage').getBoundingClientRect();
+    vw = r.width; vh = r.height;
+    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+    const padL = 20, padR = 20, padT = 22, padB = 42;
+    scale = Math.min((vw - padL - padR)/W, (vh - padT - padB)/(YMAX - YMIN));
+    ox = padL + (vw - padL - padR - W*scale)/2;
+    oy = padT + (vh - padT - padB - (YMAX - YMIN)*scale)/2 + YMAX*scale;
+  }
+
+  function rebuildGrid(){
+    const fx = X(0), fy = Y(YMAX), fw = W*scale, fh = (YMAX - YMIN)*scale;
+    let s = `<rect x="${(fx-0.5).toFixed(1)}" y="${(fy-0.5).toFixed(1)}" width="${(fw+1).toFixed(1)}" height="${(fh+1).toFixed(1)}" fill="none" stroke="${INK}" stroke-width="1.2"/>`;
+    s += `<rect x="${(fx-4.5).toFixed(1)}" y="${(fy-4.5).toFixed(1)}" width="${(fw+9).toFixed(1)}" height="${(fh+9).toFixed(1)}" fill="none" stroke="${INK}" stroke-width="0.6" opacity=".5"/>`;
+    for (let i = 0; i <= W; i++){
+      const st = i % 5 === 0;
+      s += `<line x1="${X(i).toFixed(1)}" y1="${fy.toFixed(1)}" x2="${X(i).toFixed(1)}" y2="${(fy+fh).toFixed(1)}" stroke="${st?'#CDBE9C':'#E8DEC8'}" stroke-width="1"/>`;
+    }
+    for (let j = Math.ceil(YMIN); j <= YMAX; j++){
+      const st = j % 5 === 0;
+      s += `<line x1="${fx.toFixed(1)}" y1="${Y(j).toFixed(1)}" x2="${(fx+fw).toFixed(1)}" y2="${Y(j).toFixed(1)}" stroke="${st?'#CDBE9C':'#E8DEC8'}" stroke-width="1"/>`;
+    }
+    s += `<line x1="${fx.toFixed(1)}" y1="${Y(0).toFixed(1)}" x2="${(fx+fw).toFixed(1)}" y2="${Y(0).toFixed(1)}" stroke="${INK}" stroke-width="1.5" opacity=".85"/>`;
+    for (let i = 0; i <= 30; i += 5){
+      s += `<line x1="${X(i).toFixed(1)}" y1="${(fy+fh).toFixed(1)}" x2="${X(i).toFixed(1)}" y2="${(fy+fh+5).toFixed(1)}" stroke="${INK2}" stroke-width="1"/>`;
+      s += `<text x="${X(i).toFixed(1)}" y="${(fy+fh+17).toFixed(1)}" font-family="${MONO}" font-size="10" fill="${INK2}" text-anchor="middle">${i}</text>`;
+    }
+    for (let i = 0; i <= W; i++) if (i % 5)
+      s += `<line x1="${X(i).toFixed(1)}" y1="${(fy+fh).toFixed(1)}" x2="${X(i).toFixed(1)}" y2="${(fy+fh+3).toFixed(1)}" stroke="${INK2}" stroke-width="0.7" opacity=".55"/>`;
+    for (let j = 0; j <= 15; j += 5)
+      s += `<text x="${(fx-8).toFixed(1)}" y="${(Y(j)+3.5).toFixed(1)}" font-family="${MONO}" font-size="10" fill="${INK2}" text-anchor="end">${j}</text>`;
+    gGrid.innerHTML = s;
+  }
+
+  // ------------------------------ helpers рисования ------------------------------
+  const pts = ps => ps.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(' ');
+  function line(x1,y1,x2,y2,o={}){
+    const m = o.marker ? ' marker-start="url(#arr)" marker-end="url(#arr)"' : '';
+    return `<line x1="${X(x1).toFixed(1)}" y1="${Y(y1).toFixed(1)}" x2="${X(x2).toFixed(1)}" y2="${Y(y2).toFixed(1)}" stroke="${o.stroke||INK2}" stroke-width="${o.w||1.2}"${o.dash?` stroke-dasharray="${o.dash}"`:''}${m}${o.op!=null?` opacity="${o.op}"`:''} stroke-linecap="${o.cap||'butt'}"/>`;
+  }
+  function txt(x,y,html,o={}){
+    const sx = o.screen ? x : X(x), sy = (o.screen ? y : Y(y)) + (o.dy||0);
+    return `<text x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" font-size="${o.fs||14}" fill="${o.fill||INK}" text-anchor="${o.anchor||'middle'}"${o.it?' font-style="italic"':''}${o.w?` font-weight="${o.w}"`:''}${o.halo?' class="halo"':''}${o.mono?` font-family="${MONO}"`:''}${o.op!=null?` opacity="${o.op}"`:''}${o.ls?` letter-spacing="${o.ls}"`:''}>${html}</text>`;
+  }
+  function polyFill(ps, o={}){
+    return `<polygon points="${pts(ps)}" fill="${o.fill}"${o.op!=null?` opacity="${o.op}"`:''}/>`;
+  }
+  function polyStroke(ps, o={}){
+    let dash = '';
+    if (o.drawT != null){
+      const per = perimScreen(ps);
+      dash = ` stroke-dasharray="${per.toFixed(1)}" stroke-dashoffset="${(per*(1-o.drawT)).toFixed(1)}"`;
+    } else if (o.dash) dash = ` stroke-dasharray="${o.dash}"`;
+    return `<polygon points="${pts(ps)}" fill="none" stroke="${o.stroke||INK}" stroke-width="${o.w||1.5}" stroke-linejoin="round"${dash}${o.op!=null?` opacity="${o.op}"`:''}/>`;
+  }
+  function perimScreen(ps){
+    let L = 0;
+    for (let i = 0; i < ps.length; i++){
+      const p = ps[i], q = ps[(i+1)%ps.length];
+      L += Math.hypot(X(q.x)-X(p.x), Y(q.y)-Y(p.y));
+    }
+    return L;
+  }
+  function dot(p, name, side){
+    const dx = side === 'l' ? -0.35 : 0.35, an = side === 'l' ? 'end' : 'start';
+    return `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="4" fill="${SHEET}" stroke="${INK}" stroke-width="1.6"/>` +
+      txt(p.x+dx, p.y+0.5, `<tspan font-style="italic">${name}</tspan>`, {anchor:an, fs:14.5, halo:1});
+  }
+  const ring = (p, op) => `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="8.5" fill="none" stroke="${ACC}" stroke-width="1.6" opacity="${op}"/>`;
+
+  // ------------------------------ тексты шагов ------------------------------
+  const STEPS = {
+    1: [
+      {t:'Основание и высота', d:'Основание — сторона AC, его длина b. Высота h — перпендикуляр из вершины B на прямую AC.'},
+      {t:'Поворачиваем копию', d:'Скопируем треугольник и развернём копию на 180° вокруг середины боковой стороны.'},
+      {t:'Получился параллелограмм', d:'Два равных треугольника сложились в параллелограмм: основание по-прежнему b, высота — та же h.'},
+      {t:'Треугольник — половина', d:'Площадь параллелограмма равна b·h. Наш треугольник занимает ровно половину этой фигуры.'},
+      {t:'Формула готова', d:'S = ½·b·h. Тяните вершину B вдоль красного пунктира — площадь не меняется.'}
+    ],
+    2: [
+      {t:'Средняя линия', d:'M и N — середины боковых сторон. Отрезок MN — средняя линия: он параллелен основанию.'},
+      {t:'Отрезаем верхушку', d:'Разрежем треугольник по MN. Сверху остался маленький треугольник MBN.'},
+      {t:'Разворачиваем на 180°', d:'Повернём верхушку вокруг точки N — она ляжет вплотную к основанию, сторонами точно друг к другу.'},
+      {t:'Снова параллелограмм', d:'Основание по-прежнему b, а высота стала вдвое меньше: h/2.'},
+      {t:'Формула готова', d:'Площадь параллелограмма b·(h/2) — это и есть S = ½·b·h.'}
+    ],
+    3: [
+      {t:'Сетка 1×1', d:'Накроем чертёж сеткой: одна клетка — один квадратный сантиметр (1 см²).'},
+      {t:'Считаем клетки', d:'Целые клетки — по единице. Кусочки у краёв считаем по их настоящей площади.'},
+      {t:'Ответы совпадают', d:'Сумма клеток равна ½·b·h в точности. Формула просто мгновенно «считает клетки».'}
+    ]
+  };
+
+  function targets(){
+    const m = method, s = step;
+    if (m === 1){
+      if (s === 1) return {hlT:1};
+      if (s === 2) return {hlT:0, cloneT:1};
+      if (s === 3) return {hlT:0, cloneT:1, contourT:1};
+      if (s === 4) return {hlT:0, cloneT:1, contourT:1, ghostT:1};
+      return {hlT:0, cloneT:1, contourT:1, ghostT:1, goneT:1, locusT:1};
+    }
+    if (m === 2){
+      if (s === 1) return {lineT:1};
+      if (s === 2) return {lineT:1, liftT:1};
+      if (s === 3) return {lineT:1, liftT:1, rotT:1};
+      return {lineT:1, liftT:1, rotT:1, contourT:1, hdT:1};
+    }
+    if (s === 1) return {fillT:1, revealT:0};
+    if (s === 2) return {fillT:0, revealT:1};
+    return {fillT:0, revealT:1, eqT:1};
+  }
+
+  // ------------------------------ анимация полей ------------------------------
+  let fieldAnim = null;
+  function runFields(tgt, dur){
+    if (fieldAnim) fieldAnim();
+    const from = {}, to = {};
+    for (const k in tgt) if (Math.abs((anim[k]||0) - tgt[k]) > 1e-4){ from[k] = anim[k]||0; to[k] = tgt[k]; }
+    const keys = Object.keys(from);
+    if (!keys.length){ Object.assign(anim, tgt); dirty = true; return; }
+    fieldAnim = animate(dur, k => {
+      const e = easeInOutCubic(k);
+      for (const key of keys) anim[key] = from[key] + (to[key]-from[key])*e;
+      if ('revealT' in from || 'revealT' in to) revealFrame(clamp(anim.revealT,0,1));
+      dirty = true;
+    }, () => {
+      Object.assign(anim, tgt);
+      if (keys.includes('revealT')) revealFrame(anim.revealT);
+      dirty = true; updatePanel();
+    });
+  }
+  function setFieldsInstant(tgt){
+    if (fieldAnim) fieldAnim();
+    Object.assign(anim, tgt);
+    if (method === 3 && step >= 2 && cellData) revealFrame(1);
+    dirty = true;
+  }
+
+  function goToStep(n, animated = true){
+    const last = STEPS[method].length;
+    n = clamp(n, 1, last);
+    if (n === step) return;
+    const prev = step;
+    step = n;
+    if (method === 3 && n === 2 && prev === 1 && animated){
+      snapAnimate(() => startReveal());
+    } else if (animated && Math.abs(n - prev) === 1){
+      runFields(targets(), 900);
+    } else {
+      setFieldsInstant(targets());
+      if (method === 3 && step >= 2){ cellsDirty = true; }
+    }
+    renderSteps(); updatePanel(); dirty = true;
+  }
+
+  function setMethod(m){
+    method = m; step = 1;
+    if (fieldAnim) fieldAnim();
+    ALL_FIELDS.forEach(k => anim[k] = 0);
+    gCells.innerHTML = ''; cellData = null; cellEls = [];
+    [1,2,3].forEach(i => $('mb'+i).classList.toggle('active', i === m));
+    setFieldsInstant(targets());
+    renderSteps(); updatePanel(); dirty = true;
+  }
+
+  // ------------------------------ клетки (метод III) ------------------------------
+  let cellData = null, cellEls = [];
+  function clipHalf(poly, f){
+    const out = [];
+    for (let i = 0; i < poly.length; i++){
+      const P = poly[i], Q = poly[(i+1)%poly.length];
+      const fp = f(P.x, P.y), fq = f(Q.x, Q.y);
+      if (fp <= 0) out.push(P);
+      if ((fp < 0 && fq > 0) || (fp > 0 && fq < 0)){
+        const t = fp/(fp-fq);
+        out.push({x: P.x + (Q.x-P.x)*t, y: P.y + (Q.y-P.y)*t});
+      }
+    }
+    return out;
+  }
+  function clipRect(poly, x0, y0, x1, y1){
+    let p = poly;
+    p = clipHalf(p, (x,y) => x0 - x); if (!p.length) return p;
+    p = clipHalf(p, (x,y) => x - x1); if (!p.length) return p;
+    p = clipHalf(p, (x,y) => y0 - y); if (!p.length) return p;
+    p = clipHalf(p, (x,y) => y - y1);
+    return p;
+  }
+  function areaPoly(poly){
+    let a = 0;
+    for (let i = 0; i < poly.length; i++){
+      const P = poly[i], Q = poly[(i+1)%poly.length];
+      a += P.x*Q.y - Q.x*P.y;
+    }
+    return Math.abs(a)/2;
+  }
+  function buildCells(reveal){
+    const tri = [{x:A.x,y:A.y},{x:B.x,y:B.y},{x:C.x,y:C.y}];
+    const gx0 = Math.floor(Math.min(A.x, B.x, C.x)), gx1 = Math.ceil(Math.max(A.x, B.x, C.x));
+    const gy1 = Math.ceil(B.y);
+    let full = 0, parts = 0, psum = 0; const items = [];
+    for (let i = gx0; i < gx1; i++) for (let j = 0; j < gy1; j++){
+      const cp = clipRect(tri, i, j, i+1, j+1);
+      if (cp.length < 3) continue;
+      const a = areaPoly(cp);
+      if (a < 1e-6) continue;
+      if (a > 0.999){ full++; items.push({i, j, full:true}); }
+      else { parts++; psum += a; items.push({i, j, full:false, poly:cp}); }
+    }
+    cellData = {items, full, parts, psum, total: full + psum};
+    let s = '';
+    for (const it of items){
+      const px = X(it.i).toFixed(1), py = Y(it.j+1).toFixed(1), sz = scale.toFixed(1);
+      let inner;
+      if (it.full){
+        inner = `<rect x="${px}" y="${py}" width="${sz}" height="${sz}" fill="rgba(185,138,46,.4)" stroke="rgba(40,34,24,.25)" stroke-width="1"/>`;
+      } else {
+        const d = it.poly.map((p, idx) => `${idx?'L':'M'}${X(p.x).toFixed(1)} ${Y(p.y).toFixed(1)}`).join('') + 'Z';
+        inner = `<rect x="${px}" y="${py}" width="${sz}" height="${sz}" fill="none" stroke="rgba(40,34,24,.25)" stroke-width="1" stroke-dasharray="3 3"/>` +
+                `<path d="${d}" fill="rgba(185,138,46,.4)"/>`;
+      }
+      s += `<g${reveal ? ' style="opacity:0"' : ''}>${inner}</g>`;
+    }
+    gCells.innerHTML = s;
+    cellEls = Array.from(gCells.children);
+  }
+  function revealFrame(k){
+    if (!cellData || !cellEls.length) return;
+    const N = cellData.items.length;
+    const vis = Math.round(easeOutCubic(clamp(k,0,1)) * N);
+    for (let i = 0; i < cellEls.length; i++) cellEls[i].style.opacity = i < vis ? '1' : '0';
+  }
+  function startReveal(){
+    buildCells(true);
+    if (fieldAnim) fieldAnim();
+    fieldAnim = animate(1050, k => { anim.revealT = k; revealFrame(k); }, () => {
+      anim.revealT = 1; revealFrame(1); updatePanel();
+    });
+  }
+  function ensureCells(){
+    if (method !== 3 || step < 2) return;
+    if (cellsDirty || !cellData){ buildCells(false); cellsDirty = false; revealFrame(1); }
+  }
+
+  // ------------------------------ слои методов ------------------------------
+  function drawM1(){
+    let s = '';
+    const b = C.x - A.x, h = B.y, S = b*h/2;
+    const it = introT;
+    const right = (B.x - A.x) <= (C.x - B.x);
+    const Piv = right ? {x:(B.x+C.x)/2, y:h/2} : {x:(A.x+B.x)/2, y:h/2};
+    const Far = right ? {x: B.x + C.x - A.x, y: h} : {x: A.x + B.x - C.x, y: h}; // дальняя вершина параллелограмма
+    const per = perimScreen([A,B,C]);
+
+    s += `<g filter="url(#ds)">`;
+    s += polyFill([A,B,C], {fill:'rgba(185,138,46,.18)', op: it < 1 ? it : null});
+    s += polyFill([A,B,C], {fill:'url(#hatch)', op: it < 1 ? it : null});
+    s += polyStroke([A,B,C], {stroke:INK, w:2.2, drawT: it < 1 ? it : null});
+    s += `</g>`;
+
+    if (anim.cloneT > 0 && anim.goneT < 1){
+      const ct = anim.cloneT, sgn = right ? 1 : -1;
+      const op = (1 - 0.4*Math.sin(Math.PI*ct)) * (1 - 0.62*anim.ghostT) * (1 - anim.goneT);
+      s += `<g filter="url(#ds)" opacity="${op.toFixed(3)}" transform="rotate(${(180*ct*sgn).toFixed(2)} ${X(Piv.x).toFixed(1)} ${Y(Piv.y).toFixed(1)})">`;
+      s += polyFill([A,B,C], {fill:'rgba(185,138,46,.18)'});
+      s += polyFill([A,B,C], {fill:'url(#hatch)'});
+      s += polyStroke([A,B,C], {stroke:INK, w:2.2, dash: anim.ghostT > 0 ? '5 4' : null});
+      s += `</g>`;
+      if (step === 2) s += ring(Piv, 0.9);
+    }
+    if (anim.contourT > 0 && anim.goneT < 1){
+      const q = right ? [A,B,Far,C] : [A,C,B,Far];
+      s += polyStroke(q, {stroke:INK, w:1.5, op:.85, drawT: anim.contourT < 1 ? anim.contourT : null});
+    }
+    const cx = Piv.x, cy = h/2;
+    if (step === 3 && anim.goneT < 1)
+      s += txt(cx, cy, `<tspan font-style="italic">b</tspan>·<tspan font-style="italic">h</tspan> = ${fmt(b*h)}`, {fs:16, halo:1, w:600});
+    if (step === 4)
+      s += txt(cx, cy, `${fmt(b*h)} : 2 = <tspan fill="${ACC}" font-weight="600">${fmt(S)}</tspan>`, {fs:16, halo:1});
+    if (step >= 5)
+      s += txt((A.x+B.x+C.x)/3, B.y/3, `<tspan font-style="italic">S</tspan> = ½·<tspan font-style="italic">b</tspan>·<tspan font-style="italic">h</tspan> = ${fmt(S)}`, {fs:16, halo:1, fill:ACC, w:600});
+    if (anim.locusT > 0.01){
+      s += line(0.4, B.y, W-0.4, B.y, {stroke:ACC, w:1.2, dash:'2 5', op:.8*anim.locusT});
+      s += txt(W-0.5, B.y+0.5, 'S не меняется', {anchor:'end', fill:ACC, fs:12.5, halo:1, it:1, op:anim.locusT});
+    }
+    return s;
+  }
+
+  function drawM2(){
+    let s = '';
+    const h = B.y, S = (C.x - A.x)*h/2;
+    const it = introT;
+    const M = {x:(A.x+B.x)/2, y:h/2}, N = {x:(B.x+C.x)/2, y:h/2};
+    const right = (B.x - A.x) <= (C.x - B.x);
+    const Piv = right ? N : M;
+    const sgn = right ? 1 : -1;
+    const cut = anim.liftT > 0.001 || anim.rotT > 0.001;
+
+    s += `<g filter="url(#ds)">`;
+    if (!cut){
+      s += polyFill([A,B,C], {fill:'rgba(185,138,46,.18)', op: it < 1 ? it : null});
+      s += polyFill([A,B,C], {fill:'url(#hatch)', op: it < 1 ? it : null});
+      s += polyStroke([A,B,C], {stroke:INK, w:2.2, drawT: it < 1 ? it : null});
+    } else {
+      s += polyFill([A,M,N,C], {fill:'rgba(185,138,46,.18)'});
+      s += polyFill([A,M,N,C], {fill:'url(#hatch)'});
+      s += polyStroke([A,M,N,C], {stroke:INK, w:2.2});
+    }
+    s += `</g>`;
+
+    if (anim.lineT > 0.01){
+      s += line(M.x, M.y, N.x, N.y, {stroke:ACC, w:2, dash:'5 4', op:anim.lineT});
+      s += txt((M.x+N.x)/2, M.y+0.55, 'средняя линия', {it:1, fs:12.5, fill:ACC, halo:1, op:anim.lineT});
+    }
+    if (cut){
+      const rot = 180*anim.rotT*sgn;
+      s += `<g filter="url(#ds)" transform="rotate(${rot.toFixed(2)} ${X(Piv.x).toFixed(1)} ${Y(Piv.y).toFixed(1)})">`;
+      s += polyFill([M,B,N], {fill:'rgba(185,138,46,.18)'});
+      s += polyFill([M,B,N], {fill:'url(#hatch)'});
+      s += polyStroke([M,B,N], {stroke:INK, w:2.2});
+      s += `</g>`;
+    }
+    if (anim.lineT > 0.01){ s += dot(M,'M','l'); s += dot(N,'N','r'); }
+    if (step === 3) s += ring(Piv, 0.9);
+
+    if (anim.contourT > 0.01){
+      const q = right
+        ? [A, M, {x:2*N.x-M.x, y:h/2}, C]
+        : [A, C, N, {x:2*M.x-N.x, y:h/2}];
+      s += polyStroke(q, {stroke:INK, w:1.5, op:.85, drawT: anim.contourT < 1 ? anim.contourT : null});
+    }
+    if (anim.hdT > 0.01){
+      const topY = h/2, op = anim.hdT;
+      const vx = right ? {x:2*N.x-M.x, y:topY} : {x:2*M.x-N.x, y:topY};
+      const leftSide = !right;
+      let dimX = leftSide ? vx.x - 1.15 : vx.x + 1.15;
+      s += line(vx.x, topY, dimX, topY, {w:1, stroke:INK2, op});
+      s += line(dimX, 0, dimX, topY, {w:1.2, stroke:ACC, marker:true, op});
+      const nearEdge = leftSide ? dimX < 2.6 : dimX > W - 2.6;
+      s += txt(dimX + (nearEdge ? (leftSide ? 0.3 : -0.3) : (leftSide ? -0.3 : 0.3)), topY/2,
+        `<tspan font-style="italic">h</tspan>/2 = ${fmt(h/2)}`,
+        {anchor: (leftSide === nearEdge) ? 'start' : 'end', fill:ACC, fs:13.5, halo:1, op});
+    }
+    const cx = right ? (A.x + 2*N.x - M.x)/2 : (2*M.x - N.x + N.x)/2;
+    const ccx = right ? (A.x + (2*N.x - M.x))/2 : (A.x + N.x)/2;
+    if (step >= 4){
+      const label = step === 4
+        ? `<tspan font-style="italic">b</tspan>·<tspan font-style="italic">h</tspan>/2 = ${fmt(S)}`
+        : `<tspan font-style="italic">S</tspan> = ½·<tspan font-style="italic">b</tspan>·<tspan font-style="italic">h</tspan> = ${fmt(S)}`;
+      s += txt(ccx, h/4, label, {fs:16, halo:1, w:600, fill: step >= 5 ? ACC : INK});
+    }
+    return s;
+  }
+
+  function drawM3(){
+    let s = '';
+    ensureCells();
+    const S = (C.x - A.x)*B.y/2;
+    if (anim.fillT > 0.01){
+      s += polyFill([A,B,C], {fill:'rgba(185,138,46,.18)', op:anim.fillT});
+      s += polyFill([A,B,C], {fill:'url(#hatch)', op:anim.fillT});
+    }
+    s += polyStroke([A,B,C], {stroke:INK, w:2.2});
+    if (step >= 3 && anim.eqT > 0.01 && cellData){
+      s += txt((A.x+C.x)/2, -3.4,
+        `по клеткам ${fmt(cellData.total)} см² · по формуле ${fmt(S)} см² — сошлось`,
+        {mono:1, fs:12.5, fill:OK, halo:1, op:anim.eqT});
+      s += txt((A.x+B.x+C.x)/3, B.y/3,
+        `<tspan font-style="italic">S</tspan> = ½·<tspan font-style="italic">b</tspan>·<tspan font-style="italic">h</tspan> = ${fmt(S)}`,
+        {fs:16, halo:1, fill:ACC, w:600, op:anim.eqT});
+    }
+    return s;
+  }
+
+  // ------------------------------ общий чертёж ------------------------------
+  function placeHandles(){
+    hA.setAttribute('transform', `translate(${X(A.x).toFixed(1)},${Y(A.y).toFixed(1)})`);
+    hB.setAttribute('transform', `translate(${X(B.x).toFixed(1)},${Y(B.y).toFixed(1)})`);
+    hC.setAttribute('transform', `translate(${X(C.x).toFixed(1)},${Y(C.y).toFixed(1)})`);
+  }
+
+  function draw(){
+    placeHandles();
+    const b = C.x - A.x, h = B.y;
+    const F = {x:B.x, y:0};
+    const mid = (A.x + C.x)/2;
+    let s = '';
+
+    // размер b
+    const hl = (method === 1 && step === 1) ? anim.hlT : 0;
+    if (hl > 0.01) s += line(A.x, 0.02, C.x, 0.02, {stroke:ACC, w:7, op:.3*hl, cap:'butt'});
+    const dimY = -1.7;
+    s += line(A.x, -0.1, A.x, dimY - 0.4, {w:1, stroke:INK2});
+    s += line(C.x, -0.1, C.x, dimY - 0.4, {w:1, stroke:INK2});
+    s += line(A.x, dimY, C.x, dimY, {w:1.2, stroke: hl > 0.01 ? ACC : INK2, marker:true});
+    s += txt(mid, dimY, `<tspan font-style="italic">b</tspan> = ${fmt(b)}`,
+      {fs:15, halo:1, fill: hl > 0.01 ? ACC : INK, dy:5});
+
+    // высота
+    const footIn = F.x >= A.x - 1e-9 && F.x <= C.x + 1e-9;
+    if (!footIn){
+      const ex = F.x < A.x ? A.x : C.x;
+      s += line(ex, 0, F.x, 0, {stroke:ACC, w:1.3, dash:'3 4', op:.75});
+    }
+    s += line(F.x, 0, B.x, B.y, {stroke:ACC, w:1.7, dash:'6 5', op:.6 + .4*hl});
+    const e = Math.sign(mid - F.x) || 1, gg = 0.55;
+    s += `<path d="M ${X(F.x+e*gg).toFixed(1)} ${Y(0).toFixed(1)} L ${X(F.x+e*gg).toFixed(1)} ${Y(gg).toFixed(1)} L ${X(F.x).toFixed(1)} ${Y(gg).toFixed(1)}" fill="none" stroke="${ACC}" stroke-width="1.3" opacity=".85"/>`;
+    const hs = F.x > W - 4.5 ? -1 : 1;
+    s += txt(F.x + hs*0.5, h/2, `<tspan font-style="italic">h</tspan> = ${fmt(h)}`,
+      {anchor: hs > 0 ? 'start' : 'end', fill:ACC, fs:15, halo:1});
+
+    // фигура
+    if (method === 1) s += drawM1();
+    else if (method === 2) s += drawM2();
+    else s += drawM3();
+
+    // подписи вершин
+    s += txt(A.x - 0.45, -0.55, '<tspan font-style="italic">A</tspan>', {anchor:'end', fs:17, halo:1});
+    s += txt(C.x + 0.45, -0.55, '<tspan font-style="italic">C</tspan>', {anchor:'start', fs:17, halo:1});
+    s += txt(B.x, B.y + 0.55, '<tspan font-style="italic">B</tspan>', {anchor:'middle', fs:17, halo:1});
+
+    // штампы
+    const names = {1:'I · ДОСТРАИВАНИЕ', 2:'II · РАЗРЕЗ', 3:'III · ПО КЛЕТКАМ'};
+    s += txt(10, 16, 'МОДЕЛЬ · 1 КЛЕТКА = 1 СМ²', {screen:1, anchor:'start', mono:1, fs:10, fill:INK2, ls:1.5});
+    s += txt(vw - 10, 16, names[method], {screen:1, anchor:'end', mono:1, fs:10, fill:INK2, ls:1.5});
+
+    gMain.innerHTML = s;
+  }
+
+  // ------------------------------ правая колонка ------------------------------
+  const lastStep = () => STEPS[method].length;
+  function renderSteps(){
+    $('steps').innerHTML = STEPS[method].map((st, i) => {
+      const n = i + 1;
+      const cls = n < step ? 'passed' : n === step ? 'current' : 'future';
+      return `<li class="step ${cls}" data-n="${n}"><span class="idx">${n}</span><span class="body"><span class="t">${st.t}</span><span class="d">${st.d}</span></span></li>`;
+    }).join('');
+  }
+  function updatePanel(){
+    const b = C.x - A.x, h = B.y, S = b*h/2;
+    $('vB').textContent = fmt(b) + ' см';
+    $('vH').textContent = fmt(h) + ' см';
+    $('vS').textContent = fmt(S) + ' см²';
+    let tex;
+    if (method === 2) tex = `S=b\\cdot\\frac{h}{2}=${kx(b)}\\cdot${kx(h/2)}=${kx(S)}`;
+    else tex = `S=\\tfrac{1}{2}\\,b\\,h=\\tfrac{1}{2}\\cdot${kx(b)}\\cdot${kx(h)}=${kx(S)}`;
+    const calcEl = $('calc');
+    if (window.katex) katex.render(tex, calcEl, {throwOnError:false});
+    else calcEl.textContent = `S = ½·${fmt(b)}·${fmt(h)} = ${fmt(S)}`;
+    const cl = $('cellLine');
+    if (method === 3 && step >= 2 && cellData){
+      cl.style.display = 'block';
+      cl.innerHTML = `по клеткам: <b>${cellData.full}</b> целых + ${cellData.parts} кусочков (Σ ${fmt(cellData.psum)}) = <b>${fmt(cellData.total)}</b>`;
+    } else cl.style.display = 'none';
+    $('calcBox').classList.toggle('final', step === lastStep());
+    $('stepNum').textContent = `шаг ${step} / ${lastStep()}`;
+    $('prevB').disabled = step === 1;
+    $('nextB').disabled = step === lastStep();
+  }
+
+  // ------------------------------ перетаскивание ------------------------------
+  let vertAnim = null;
+  function bindHandle(el, apply){
+    el.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      if (vertAnim) vertAnim();
+      el.setPointerCapture(ev.pointerId);
+      el.classList.add('drag');
+      document.body.classList.add('grabbing');
+      const move = e => {
+        const r = svg.getBoundingClientRect();
+        const wx = (e.clientX - r.left - ox)/scale;
+        const wy = (oy - (e.clientY - r.top))/scale;
+        apply(wx, wy);
+        if (method === 3 && step >= 2) cellsDirty = true;
+        dirty = true; updatePanel();
+      };
+      const up = () => {
+        el.classList.remove('drag');
+        document.body.classList.remove('grabbing');
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', up);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    });
+  }
+  bindHandle(hA, (x) => { A.x = clamp(x, 0.5, C.x - 2); });
+  bindHandle(hC, (x) => { C.x = clamp(x, A.x + 2, W - 0.5); });
+  bindHandle(hB, (x, y) => {
+    if (method === 3){ B.x = clamp(Math.round(x), 0.5, W - 0.5); B.y = clamp(Math.round(y), 1.5, 13); }
+    else { B.x = clamp(x, 0.5, W - 0.5); B.y = clamp(y, 1.5, 13); }
+  });
+
+  function snapAnimate(done){
+    const f = {ax:A.x, cx:C.x, bx:B.x, by:B.y};
+    const t = {
+      ax: clamp(Math.round(f.ax), 1, Math.round(f.cx) - 2),
+      cx: clamp(Math.round(f.cx), Math.max(1, Math.round(f.ax)) + 2, W - 1),
+      bx: clamp(Math.round(f.bx), 1, W - 1),
+      by: clamp(Math.round(f.by), 2, 13)
+    };
+    if (t.ax === f.ax && t.cx === f.cx && t.bx === f.bx && t.by === f.by){ done(); return; }
+    if (vertAnim) vertAnim();
+    vertAnim = animate(260, k => {
+      const e = easeOutCubic(k);
+      A.x = f.ax + (t.ax-f.ax)*e; C.x = f.cx + (t.cx-f.cx)*e;
+      B.x = f.bx + (t.bx-f.bx)*e; B.y = f.by + (t.by-f.by)*e;
+      dirty = true;
+    }, () => { A.x=t.ax; C.x=t.cx; B.x=t.bx; B.y=t.by; dirty=true; updatePanel(); done(); });
+  }
+
+  // ------------------------------ управление ------------------------------
+  $('prevB').addEventListener('click', () => goToStep(step - 1));
+  $('nextB').addEventListener('click', () => goToStep(step + 1));
+  $('steps').addEventListener('click', e => {
+    const li = e.target.closest('.step');
+    if (li) goToStep(+li.dataset.n);
+  });
+  [1,2,3].forEach(m => $('mb'+m).addEventListener('click', () => { if (method !== m) setMethod(m); }));
+  $('resetB').addEventListener('click', () => {
+    setMethod(1);
+    if (vertAnim) vertAnim();
+    const f = {ax:A.x, cx:C.x, bx:B.x, by:B.y};
+    vertAnim = animate(450, k => {
+      const e = easeInOutCubic(k);
+      A.x = f.ax + (DEF.ax-f.ax)*e; C.x = f.cx + (DEF.cx-f.cx)*e;
+      B.x = f.bx + (DEF.bx-f.bx)*e; B.y = f.by + (DEF.by-f.by)*e;
+      dirty = true;
+    }, () => { A.x=DEF.ax; C.x=DEF.cx; B.x=DEF.bx; B.y=DEF.by; dirty=true; updatePanel(); runFields(targets(), 500); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight'){ goToStep(step + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft'){ goToStep(step - 1); e.preventDefault(); }
+    else if (e.key >= '1' && e.key <= '3'){ const m = +e.key; if (method !== m) setMethod(m); }
+  });
+
+  new ResizeObserver(() => {
+    fit(); rebuildGrid();
+    if (method === 3 && step >= 2) cellsDirty = true;
+    dirty = true;
+  }).observe($('stage'));
+
+  // ------------------------------ цикл ------------------------------
+  function loop(){
+    if (cellsDirty && method === 3 && step >= 2){
+      cellsDirty = false;
+      buildCells(false); revealFrame(1); dirty = true;
+    }
+    if (dirty){ dirty = false; draw(); }
+    requestAnimationFrame(loop);
+  }
+
+  // старт
+  fit(); rebuildGrid(); renderSteps(); updatePanel(); draw();
+  animate(950, k => { introT = k; dirty = true; }, () => { introT = 1; dirty = true; });
+  setTimeout(() => runFields(targets(), 700), 400);
+  window.addEventListener('load', updatePanel);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
